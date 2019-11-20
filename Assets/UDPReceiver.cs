@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using UnityEngine;
 
@@ -17,22 +16,29 @@ public class UDPReceiver : MonoBehaviour
     static UdpClient udp;
     Thread thread;
 
-    public GameObject sphere;
-    private SphereBehavior sphereBehavior;
-    private List<GameObject> cubes = new List<GameObject>();
-    private List<CubeBehavior> cubeBehaviors = new List<CubeBehavior>();
-    private int counter, red, green, blue;
+    public GameObject sphere, plane;
+    public Camera camera;
+    private InitBehaviour initBehaviour;
+    private List<GameObject> freqSpheres = new List<GameObject>();
+    private GameObject myClouds;
+    private List<FreqSphereBehaviour> freqSphereBehaviours = new List<FreqSphereBehaviour>();
+    private MyCloudBehaviour myCloudBehaviour;
+    private float level, spectralCentroid, cameryYVelocity;
+    private float flexIndex;
 
     // Start is called before the first frame update
     void Start()
     {
         sphere = GameObject.Find("Sphere");
-        sphereBehavior = sphere.GetComponent<SphereBehavior>();
+        myClouds = GameObject.Find("MyClouds");
+
+        initBehaviour = sphere.GetComponent<InitBehaviour>();
+        myCloudBehaviour = myClouds.GetComponent<MyCloudBehaviour>();
 
         // Cubes
-        cubes.AddRange(GameObject.FindGameObjectsWithTag("cubeVisualiser"));
-        cubes.ForEach(cube => {
-            cubeBehaviors.Add(cube.GetComponent<CubeBehavior>());
+        freqSpheres.AddRange(GameObject.FindGameObjectsWithTag("freqSphereVisualiser"));
+        freqSpheres.ForEach(freqSphere => {
+            freqSphereBehaviours.Add(freqSphere.GetComponent<FreqSphereBehaviour>());
         });
 
         // Hide sphere
@@ -55,24 +61,54 @@ public class UDPReceiver : MonoBehaviour
                 processingData = false;
 
                 // Convert bytes
-                // Structure is 7 * rgb => 21 bytes
+                // Structure is 7 x level values => 7 bytes
                 // Coming in as an unsigned byte []
-                counter = 0;
+                float current = 0.0f;
+                float max = 10 * Mathf.Log10(returnData.Max());
+                if(max == -Mathf.Infinity)
+                {
+                    max = 1; // Else we divide by 0 :(
+                }
                 for(int i = 0; i < 7; i++)
                 {
-                    red = returnData[counter++];
-                    green = returnData[counter++];
-                    blue = returnData[counter++];
+                    current = returnData[i];
+                    level = current == 0.0f ? 0.0f : Mathf.Log10(current);
+                    float colorVal = 10 * level / max;
+                    color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
 
-                    color = new Color(red, green, blue);
-                    cubeBehaviors[i].ChangeColor(cubes[i], color);
-                    cubeBehaviors[i].ChangeHeight(cubes[i], red);
+                    freqSphereBehaviours[i].ChangeColor(freqSpheres[i], color);
+                    freqSphereBehaviours[i].ChangeNoiseAmount(freqSpheres[i], level);
                 }
 
-                //Debug.Log(cubeIdx.ToString());
-                //Debug.Log(color.r.ToString() + " " + color.g + " " + color.b);
+                spectralCentroid = 1.5f * Mathf.Log10(returnData[7]) / Mathf.Log10(22050);
+                spectralCentroid = Mathf.Clamp01(spectralCentroid);
+                plane.GetComponent<Renderer>().material.color = Color.HSVToRGB(spectralCentroid, 1.0f, spectralCentroid);
 
-                //sphereBehavior.ChangeColor(sphere, color);
+                // Get values from flex-sensors and apply to camera
+                Vector3 currentCameraPosition = camera.transform.position;
+
+                flexIndex = returnData[8] / 127.0f;
+                float newY = Mathf.SmoothDamp(currentCameraPosition.y, flexIndex, ref cameryYVelocity, 0.03f);
+                camera.transform.position = new Vector3(currentCameraPosition.x, newY, currentCameraPosition.z);
+
+                // Change MyClouds
+                float bassVal = returnData[0];
+                float threshold = 170.0f;
+                if (bassVal > threshold)
+                {
+                    level = Mathf.Log10(bassVal);
+                    float colorVal = 10 * level / max;
+                    color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
+                    color.a = 1.0f;
+                    myCloudBehaviour.ChangeBass(myClouds, bassVal / threshold);
+                    myCloudBehaviour.ChangeColour(myClouds, color);
+
+                } else
+                {
+                    myCloudBehaviour.ChangeBass(myClouds, 0.0f);
+                    color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
+                    myCloudBehaviour.ChangeColour(myClouds, color);
+                }
             }
         }
     }
