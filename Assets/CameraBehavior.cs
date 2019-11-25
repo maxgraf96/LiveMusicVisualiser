@@ -13,7 +13,8 @@ public class CameraBehavior : MonoBehaviour
     public bool freeFlight = false;
     // The invisible sphere in the middle of the world
     public GameObject trackingSphere;
-    private float incomingRotation, rotationDelta, prevRotation, prevRotationDelta;
+    // Incoming (from UDP)
+    private float iRotation, iRotation2;
     private float rotationVelocity;
     private float smoothTime = 0.03f;
 
@@ -21,6 +22,7 @@ public class CameraBehavior : MonoBehaviour
     float angle = 0;
     float speed = 2 * Mathf.PI;
     float radius = 15; // Distance from camera to trackingSphere
+    float x, y, z;
 
     void Start()
     {
@@ -63,17 +65,31 @@ public class CameraBehavior : MonoBehaviour
             // Basically rotation around unit circle scaled up to radius 15
             // - Mathf.PI / 2 because initial camera position is not at re = 15, im = 0
             // But at re = 0, im = -15 speaking in terms of imaginary numbers on the not-quite-unit circle
-            angle = speed * incomingRotation - Mathf.PI / 2;
-            float x = Mathf.SmoothDamp(transform.position.x, Mathf.Cos(angle) * radius, ref rotationVelocity, smoothTime);
-            float z = Mathf.SmoothDamp(transform.position.z, Mathf.Sin(angle) * radius, ref rotationVelocity, smoothTime);
-            transform.position = new Vector3(x, 0, z);
+            angle = speed * iRotation - Mathf.PI / 2;
+            x = Mathf.SmoothDamp(transform.position.x, Mathf.Cos(angle) * radius, ref rotationVelocity, smoothTime);
+            z = Mathf.SmoothDamp(transform.position.z, Mathf.Sin(angle) * radius, ref rotationVelocity, smoothTime);
+
+            // Height of camera (in terms of y-axis)
+            y = Mathf.SmoothDamp(transform.position.y, map(iRotation2, 0f, 1f, -5f, 5f), ref rotationVelocity, smoothTime);
+
+            transform.position = new Vector3(x, y, z);
             transform.LookAt(trackingSphere.transform);
         }
     }
 
     public void SetRotationValue(float rotation)
     {
-        incomingRotation = rotation;
+        iRotation = rotation;
+    }
+
+    public void SetRotation2Value(float rotation2)
+    {
+        iRotation2 = rotation2;
+    }
+
+    public void SetZoom(float zoom)
+    {
+        radius = map(zoom, 0f, 1f, 20f, 5f);
     }
 
     private static float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)

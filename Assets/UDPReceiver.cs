@@ -25,7 +25,7 @@ public class UDPReceiver : MonoBehaviour
     private List<FreqSphereBehaviour> freqSphereBehaviours = new List<FreqSphereBehaviour>();
     private MyCloudBehaviour myCloudBehaviour;
     private float level, spectralCentroid;
-    private float flexIndex;
+    private float flexThumb, flexIndex, flexRing;
 
     // Start is called before the first frame update
     void Start()
@@ -90,7 +90,11 @@ public class UDPReceiver : MonoBehaviour
                 // Get values from flex-sensors and apply to camera
 
                 flexIndex = returnData[8] / 127.0f;
+                flexThumb = returnData[9] / 127.0f;
+                flexRing = returnData[10] / 127.0f;
                 cameraBehavior.SetRotationValue(flexIndex);
+                cameraBehavior.SetRotation2Value(flexThumb);
+                cameraBehavior.SetZoom(flexRing);
 
                 // Change MyClouds
                 float bassVal = returnData[0];
