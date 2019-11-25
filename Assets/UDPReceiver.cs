@@ -18,12 +18,13 @@ public class UDPReceiver : MonoBehaviour
 
     public GameObject sphere, plane;
     public Camera camera;
+    private CameraBehavior cameraBehavior;
     private InitBehaviour initBehaviour;
     private List<GameObject> freqSpheres = new List<GameObject>();
     private GameObject myClouds;
     private List<FreqSphereBehaviour> freqSphereBehaviours = new List<FreqSphereBehaviour>();
     private MyCloudBehaviour myCloudBehaviour;
-    private float level, spectralCentroid, cameryYVelocity;
+    private float level, spectralCentroid;
     private float flexIndex;
 
     // Start is called before the first frame update
@@ -34,6 +35,8 @@ public class UDPReceiver : MonoBehaviour
 
         initBehaviour = sphere.GetComponent<InitBehaviour>();
         myCloudBehaviour = myClouds.GetComponent<MyCloudBehaviour>();
+
+        cameraBehavior = camera.GetComponent<CameraBehavior>();
 
         // Cubes
         freqSpheres.AddRange(GameObject.FindGameObjectsWithTag("freqSphereVisualiser"));
@@ -85,11 +88,9 @@ public class UDPReceiver : MonoBehaviour
                 plane.GetComponent<Renderer>().material.color = Color.HSVToRGB(spectralCentroid, 1.0f, spectralCentroid);
 
                 // Get values from flex-sensors and apply to camera
-                Vector3 currentCameraPosition = camera.transform.position;
 
                 flexIndex = returnData[8] / 127.0f;
-                float newY = Mathf.SmoothDamp(currentCameraPosition.y, flexIndex, ref cameryYVelocity, 0.03f);
-                camera.transform.position = new Vector3(currentCameraPosition.x, newY, currentCameraPosition.z);
+                cameraBehavior.SetRotationValue(flexIndex);
 
                 // Change MyClouds
                 float bassVal = returnData[0];

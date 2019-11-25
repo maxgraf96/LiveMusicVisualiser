@@ -11,7 +11,7 @@ public class InitBehaviour : MonoBehaviour
     {
         for(int i = -6; i < 8; i += 2)
         {
-            Instantiate(freqSpherePrefab, new Vector3(i, 0, 1), Quaternion.identity);
+            Instantiate(freqSpherePrefab, new Vector3(i, 0, 0), Quaternion.identity);
         }
     }
 
