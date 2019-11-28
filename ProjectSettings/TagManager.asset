@@ -6,6 +6,7 @@ TagManager:
   tags:
   - cubeVisualiser
   - freqSphereVisualiser
+  - freqPlaneVisualiser
   layers:
   - Default
   - TransparentFX

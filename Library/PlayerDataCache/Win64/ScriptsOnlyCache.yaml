@@ -2,6 +2,7 @@ ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
     - CameraBehavior
+    - Fractal
     - FreqSphereBehaviour
     - InitBehaviour
     - MyCloudBehaviour
@@ -45,17 +46,19 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 10056}
+      Script: {instanceID: 10102}
     - Class: 114
-      Script: {instanceID: 11462}
+      Script: {instanceID: 11092}
     - Class: 114
-      Script: {instanceID: 11598}
+      Script: {instanceID: 11510}
     - Class: 114
-      Script: {instanceID: 11672}
+      Script: {instanceID: 11646}
     - Class: 114
-      Script: {instanceID: 12178}
+      Script: {instanceID: 11720}
     - Class: 114
-      Script: {instanceID: 12418}
+      Script: {instanceID: 12226}
+    - Class: 114
+      Script: {instanceID: 12466}
     - Class: 115
       Script: {instanceID: 0}
     - Class: 135
@@ -343,6 +346,12 @@ ScriptsOnlyBuild:
     className: Selectable
   - hash:
       serializedVersion: 2
+      Hash: 376bc3b25aa68533f934b1e43852fad6
+    assemblyName: Assembly-CSharp.dll
+    namespaceName: 
+    className: Fractal
+  - hash:
+      serializedVersion: 2
       Hash: 61b9d9b6f4b6a222dfea8b131b3d3227
     assemblyName: Unity.Postprocessing.Runtime.dll
     namespaceName: UnityEngine.Rendering.PostProcessing
@@ -397,7 +406,7 @@ ScriptsOnlyBuild:
     className: RemoteTestResultSender
   - hash:
       serializedVersion: 2
-      Hash: ff93db2633f98078b26c93a502bf8dff
+      Hash: cd2bb72db68aebf4b60f7a60bede303e
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
     className: InitBehaviour
