@@ -92,6 +92,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37981b510a80b2145ad305a2ff8b3999, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  material: {fileID: 2100000, guid: cd38135f8cd9b8245b25599aeec3a7b4, type: 2}
+  scaleTimeInSeconds: 0.3
+  originalScale: {x: 2, y: 2, z: 2}
+  scaleProportion: 2
+  rotTimeInSeconds: 0.3
+  rotDegrees: 60
+  fadeTimeInSeconds: 0.3
 --- !u!135 &8338355900306698858
 SphereCollider:
   m_ObjectHideFlags: 0

@@ -2,42 +2,37 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Fractal : MonoBehaviour
+public class Fractal : ResponsiveGameObject
 {
-    public Mesh mesh;
-    public Material material;
     public int depth;
     public int maxDepth;
     public float childScale;
     private float depthRatio;
     private float iVisibilty; // Incoming visibilty [0...1]
     private Fractal[] children;
-    private Color blank = new Color(0, 0, 0, 0f);
-    private Color filled = new Color(0, 0, 0, 1f);
+    private Color initial = new Color(0, 0, 0, 0.5f);
+    // Determines how quickly the fractal rotates without interaction
+    public float standardRotationSpeed;
 
-    // Timer for trigger events
-    // Scaling
-    private bool scaleTimerStarted = false;
-    private float scaleTimer = 0f;
-    public float scaleTimeInSeconds;
-    public Vector3 originalScale;
-    public float scaleProportion; // To what size of the original size the fractal should be increased
+    // Kick related
+    private bool kickTimerStarted = false;
+    private float kickTimer;
+    public float kickTimeDuration;
+    // How far the kick impact should move the fractal
+    public float kickScale;
+    private Vector3 originalPosition = Vector3.zero;
 
-    // Rotation
-    private bool rotTimerStarted = false;
-    private float rotTimer = 0f;
-    public float rotTimeInSeconds;
-    public float rotDegrees; // How far the fractal should be rotated on impact
-    private Quaternion currentRotation;
-
-    // Fading
-    private bool fadeTimerStarted = false;
-    private float fadeTimer = 0f;
-    public float fadeTimeInSeconds;
+    // HiHat related
+    private bool hihatTimerStarted = false;
+    private float hihatTimer;
+    public float hihatTimeDuration;
+    // How far the hihat impact should rotate the fractal
+    public float hihatRotationDegrees;
 
     // Flag for checking if is root
     public bool isRoot = false;
 
+    // Where the child objects should be spawned
     private static Vector3[] childDirections = {
         Vector3.up,
         Vector3.right,
@@ -54,25 +49,45 @@ public class Fractal : MonoBehaviour
         Quaternion.Euler(-90f, 0f, 0f)
     };
 
-    private void Start()
+    new void Start()
     {
+        // Initialise
+        base.Start();
+
+        // Add material
         gameObject.AddComponent<MeshFilter>().mesh = mesh;
         gameObject.AddComponent<MeshRenderer>().material = material;
 
+        // Create next layer of child objects
         if (depth < maxDepth)
         {
             StartCoroutine(CreateChildren());
         }
 
         depthRatio = depth / maxDepth;
-        currentRotation = transform.localRotation;
     }
 
+    new void Update()
+    {
+        base.Update();
+        // Transforms need to be done only on the root object as they will cascade to child objects
+        if (isRoot)
+        {
+            scale(scaleProportion);
+            rotate();
+            standardRotate();
+            kickMove();
+            hihatRotate();
+            fadeOut();
+        }
+    }
+
+    // Fractal specific methods
     private void Initialize(Fractal parent, int childIndex)
     {
         mesh = parent.mesh;
         material = parent.material;
-        material.SetColor("_Colour", blank);
+        material.SetColor("_Colour", initial);
         maxDepth = parent.maxDepth;
         depth = parent.depth + 1;
         childScale = parent.childScale;
@@ -94,122 +109,72 @@ public class Fractal : MonoBehaviour
         children = GetComponentsInChildren<Fractal>();
     }
 
-    void Update()
+    private void standardRotate()
     {
-        // Transforms need to be done only on the root object as they will cascade to child objects
-        if (isRoot)
-        {
-            scale(scaleProportion);
-            rotate();
-            fadeOut();
-        }
+        // Rotate around y-axis
+        transform.localRotation = Quaternion.Euler(0,
+                    transform.localRotation.eulerAngles.y + standardRotationSpeed * Time.deltaTime, 0);
     }
 
-    public void ChangeColor(Color color)
+    private void kickMove()
     {
-        // This also sets the colour of all child elements
-        material.SetColor("_Colour", color);
-        material.SetFloat("_AlphaValue", color.a);
-    }
-
-    private void scale(float scale)
-    {
-        if (scaleTimerStarted)
+        if (kickTimerStarted)
         {
-            scaleTimer += Time.deltaTime;
+            kickTimer += Time.deltaTime;
 
-            if (scaleTimer >= scaleTimeInSeconds)
+            if (kickTimer >= kickTimeDuration)
             {
                 // Reset timer
-                scaleTimer = 0f;
-                scaleTimerStarted = false;
-                // Fadeout
-                triggerFadeOut();
-            }
-            else
+                kickTimer = 0f;
+                kickTimerStarted = false;
+            } else
             {
-                if (scaleTimer <= scaleTimeInSeconds / 2f)
+                if (kickTimer <= kickTimeDuration / 2f)
                 {
-                    // Scale up
-                    transform.localScale = Vector3.Lerp(originalScale, originalScale * scaleProportion,
-                        map(scaleTimer, 0f, scaleTimeInSeconds, 0f, 1f));
+                    // Scale down
+                    transform.localScale = Vector3.Lerp(originalScale, originalScale * kickScale,
+                        map(kickTimer, 0f, kickTimeDuration, 0f, 1f));
                 }
                 else
                 {
-                    // Scale back down
-                    transform.localScale = Vector3.Lerp(originalScale, originalScale * scaleProportion,
-                        map(scaleTimer, 0f, scaleTimeInSeconds, 1f, 0f));
+                    // Scale back up
+                    transform.localScale = Vector3.Lerp(originalScale, originalScale * kickScale,
+                        map(kickTimer, 0f, kickTimeDuration, 1f, 0f));
                 }
             }
         }
     }
 
-    private void rotate()
+    private void hihatRotate()
     {
-        if (rotTimerStarted)
+        if (hihatTimerStarted)
         {
-            rotTimer += Time.deltaTime;
+            hihatTimer += Time.deltaTime;
 
-            if (rotTimer >= rotTimeInSeconds)
+            if (hihatTimer >= hihatTimeDuration)
             {
                 // Reset timer
-                rotTimer = 0f;
-                rotTimerStarted = false;
-                currentRotation = transform.localRotation;
+                hihatTimer = 0f;
+                hihatTimerStarted = false;
             }
             else
             {
                 // Rotaaate
-                float process = map(rotTimer, 0f, rotTimeInSeconds, 0f, 1f);
-                transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(0, 
-                    currentRotation.eulerAngles.y + rotDegrees, 0), process);
+                float process = map(hihatTimer, 0f, hihatTimeDuration, 0f, 1f);
+                transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(0,
+                    currentRotation.eulerAngles.y - hihatRotationDegrees, 0), process);
             }
         }
     }
 
-    private void fadeOut()
+    public void triggerKick()
     {
-        if (fadeTimerStarted)
-        {
-            fadeTimer += Time.deltaTime;
-
-            if (fadeTimer >= fadeTimeInSeconds)
-            {
-                // Reset timer
-                fadeTimer = 0f;
-                fadeTimerStarted = false;
-            }
-            else
-            {
-                // Fade out
-                float alpha = map(fadeTimer, 0f, fadeTimeInSeconds, 1f, 0f);
-                Color current = material.GetColor("_Colour");
-                current.a = alpha;
-                ChangeColor(current);
-            }
-        }
+        if (!kickTimerStarted) kickTimerStarted = true;
     }
 
-    // Triggers
-    public void triggerFadeOut()
+    public void triggerHihat()
     {
-        if (!fadeTimerStarted) fadeTimerStarted = true;
-    }
-
-    public void triggerScale()
-    {
-        if (!scaleTimerStarted) scaleTimerStarted = true;
-    }
-
-    public void triggerRotation()
-    {
-        if (!rotTimerStarted) rotTimerStarted = true;
-    }
-
-    // Helper methods
-
-    private static float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)
-    {
-        return (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
+        if (!hihatTimerStarted) hihatTimerStarted = true;
+        currentRotation = transform.localRotation;
     }
 }

@@ -17,16 +17,10 @@ public class UDPReceiver : MonoBehaviour
     Thread thread;
 
     // Game objects
-    public GameObject sphere, plane;
     public Camera camera;
     private CameraBehavior cameraBehavior;
-    private InitBehaviour initBehaviour;
-    private List<GameObject> freqSpheres = new List<GameObject>();
-    private List<GameObject> freqPlanes = new List<GameObject>();
-    private GameObject myClouds;
-    private List<FreqSphereBehaviour> freqSphereBehaviours = new List<FreqSphereBehaviour>();
-    private List<FreqSphereBehaviour> freqPlaneBehaviours = new List<FreqSphereBehaviour>();
-    private MyCloudBehaviour myCloudBehaviour;
+    private GameObject kickSphere;
+    private FreqSphereBehaviour kickSphereBehaviour;
     private Fractal fractalRoot;
 
     // Incoming data
@@ -34,31 +28,20 @@ public class UDPReceiver : MonoBehaviour
     private float flexThumb, flexIndex, flexRing;
     private float drumThumb, drumIndex, drumMiddle, drumRing, drumPinky;
 
+    public PSManager psManager;
+
     // Start is called before the first frame update
     void Start()
     {
-        sphere = GameObject.Find("Sphere");
-        myClouds = GameObject.Find("MyClouds");
+        // Kick related - freqSpheres
+        kickSphere = GameObject.FindGameObjectWithTag("freqSphereVisualiser");
+        kickSphereBehaviour = kickSphere.GetComponent<FreqSphereBehaviour>();
 
-        initBehaviour = sphere.GetComponent<InitBehaviour>();
-        myCloudBehaviour = myClouds.GetComponent<MyCloudBehaviour>();
-
-        cameraBehavior = camera.GetComponent<CameraBehavior>();
-
+        // Snare related
         fractalRoot = GameObject.Find("Fractal").GetComponent<Fractal>();
 
-        // freqspheres
-        freqSpheres.AddRange(GameObject.FindGameObjectsWithTag("freqSphereVisualiser"));
-        freqPlanes.AddRange(GameObject.FindGameObjectsWithTag("freqPlaneVisualiser"));
-        freqSpheres.ForEach(freqSphere => {
-            freqSphereBehaviours.Add(freqSphere.GetComponent<FreqSphereBehaviour>());
-        });
-        freqPlanes.ForEach(freqPlane => {
-            freqPlaneBehaviours.Add(freqPlane.GetComponent<FreqSphereBehaviour>());
-        });
-
-        // Hide sphere
-        sphere.GetComponent<Renderer>().enabled = false;
+        // Camera behaviour
+        cameraBehavior = camera.GetComponent<CameraBehavior>();
 
         // Start UDP receiver in separate thread
         thread = new Thread(new ThreadStart(ThreadMethod));
@@ -76,34 +59,52 @@ public class UDPReceiver : MonoBehaviour
             {
                 processingData = false;
 
-                // Convert bytes
-                // Structure is 7 x level values => 7 bytes
-                // Coming in as an unsigned byte []
-                float current = 0.0f;
-                float max = 10 * Mathf.Log10(returnData.Max());
-                if(max == -Mathf.Infinity)
+                // Change kickSphere
+                drumThumb = returnData[11] / 127.0f;
+                level = returnData[0] == 0.0f ? 0.0f : Mathf.Log10(returnData[0]);
+                AutoMapper.updateF0(level);
+                float colorVal = 20 * level / AutoMapper.F0;
+                color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
+                kickSphereBehaviour.ChangeColor(kickSphere, color);
+                kickSphereBehaviour.ChangeNoiseAmount(kickSphere, level / AutoMapper.F0);
+                if (drumThumb > 0.1f)
                 {
-                    max = 1; // Else we divide by 0 :(
-                }
-                for(int i = 0; i < 7; i++)
-                {
-                    current = returnData[i];
-                    level = current == 0.0f ? 0.0f : Mathf.Log10(current);
-                    float colorVal = 10 * level / max;
-                    color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
+                    // Trigger kick behaviour
+                    color.a = 1f;
+                    kickSphereBehaviour.triggerImpact();
 
-                    // Manipulate spheres
-                    freqSphereBehaviours[i].ChangeColor(freqSpheres[i], color);
-                    freqSphereBehaviours[i].ChangeNoiseAmount(freqSpheres[i], level);
-
-                    // Manipulate planes
-                    freqPlaneBehaviours[i].ChangeColor(freqPlanes[i], color);
-                    freqPlaneBehaviours[i].ChangeNoiseAmount(freqPlanes[i], level);
+                    // Trigger fractal movement
+                    fractalRoot.triggerKick();
                 }
 
-                spectralCentroid = 1.5f * Mathf.Log10(returnData[7]) / Mathf.Log10(22050);
-                spectralCentroid = Mathf.Clamp01(spectralCentroid);
-                plane.GetComponent<Renderer>().material.color = Color.HSVToRGB(spectralCentroid, 1.0f, spectralCentroid);
+                drumMiddle = returnData[13] / 127.0f;
+                if (drumMiddle > 0.1f)
+                {
+                    psManager.triggerSnare();
+                }
+
+                // Update the fractal
+                drumMiddle = returnData[13] / 127f;
+                level = returnData[1] == 0.0f ? 0.0f : Mathf.Log10(returnData[1]);
+                //Update max value if higher (taken care of by AutoMapper)
+                AutoMapper.updateF2(level);
+                // Update fade level(alpha value)
+                fractalRoot.updateFade(level, AutoMapper.F2);
+                //fractalRoot.updateFade(1, 1);
+                // Trigger fractal scaling if snare hits
+                if (drumMiddle > 0.2f)
+                {
+                    color = Color.HSVToRGB(drumMiddle, 1.0f, 1f);
+                    fractalRoot.ChangeColor(color);
+                    fractalRoot.triggerImpact();
+                }
+
+                // Ring finger
+                drumRing = returnData[14] / 127f;
+                if (drumRing > 0f)
+                {
+                    fractalRoot.triggerHihat();
+                }
 
                 // Get values from flex-sensors and pass to camera
                 // Scale values to 0...1
@@ -111,40 +112,14 @@ public class UDPReceiver : MonoBehaviour
                 flexThumb = returnData[9] / 127.0f;
                 flexRing = returnData[10] / 127.0f;
 
-                // Trigger fractal scaling if kick hits
-                drumThumb = returnData[11] / 127.0f;
-                if (drumThumb > 0f)
-                {
-                    color = Color.HSVToRGB(drumThumb, 1.0f, drumThumb);
-                    color.a = drumThumb;
-                    fractalRoot.ChangeColor(color);
-                    fractalRoot.triggerScale();
-                    fractalRoot.triggerRotation();
-                }
-
                 // Set camera control parameters
                 cameraBehavior.SetRotationValue(flexIndex); // Rotation around y-axis
                 cameraBehavior.SetRotation2Value(flexThumb); // Rotation around x/z-axis
                 cameraBehavior.SetZoom(flexRing); // Zoom in reference to center of scene
 
-                // Change MyClouds
-                float bassVal = returnData[0];
-                float threshold = 170.0f;
-                if (bassVal > threshold)
-                {
-                    level = Mathf.Log10(bassVal);
-                    float colorVal = 10 * level / max;
-                    color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
-                    color.a = 1.0f;
-                    myCloudBehaviour.ChangeBass(myClouds, bassVal / threshold);
-                    myCloudBehaviour.ChangeColour(myClouds, color);
-
-                } else
-                {
-                    myCloudBehaviour.ChangeBass(myClouds, 0.0f);
-                    color = new Color(0.0f, 0.0f, 0.0f, 0.0f);
-                    myCloudBehaviour.ChangeColour(myClouds, color);
-                }
+                //// Spectral centroid
+                //spectralCentroid = 1.5f * Mathf.Log10(returnData[7]) / Mathf.Log10(22050);
+                //spectralCentroid = Mathf.Clamp01(spectralCentroid);
             }
         }
     }
