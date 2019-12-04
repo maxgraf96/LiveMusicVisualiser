@@ -237,7 +237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 718882091e38fd545bcdbee5a5510cd8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  snareTimeInSeconds: 0.4
+  snareTimeInSeconds: 0.5
 --- !u!114 &333749427
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -440,7 +440,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a94c5ebc9f94884ca7744e1ac30484e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  freeFlight: 1
+  freeFlight: 0
   trackingSphere: {fileID: 333749421}
 --- !u!1 &966365887
 GameObject:
@@ -473,10 +473,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 2100000, guid: 1100d393f3a8ef1498d8315031f2d627, type: 2}
-  scaleTimeInSeconds: 1
+  scaleTimeInSeconds: 0.5
   originalScale: {x: 1, y: 1, z: 1}
   scaleProportion: 2
-  rotTimeInSeconds: 1
+  rotTimeInSeconds: 0.5
   rotDegrees: 60
   fadeTimeInSeconds: 3
   depth: 0
@@ -485,8 +485,8 @@ MonoBehaviour:
   standardRotationSpeed: 10
   kickTimeDuration: 0.35
   kickScale: 0.3
-  hihatTimeDuration: 0.15
-  hihatRotationDegrees: 5
+  hihatTimeDuration: 0.3
+  hihatRotationDegrees: 20
   isRoot: 1
 --- !u!4 &966365889
 Transform:
@@ -5471,6 +5471,16 @@ PrefabInstance:
         type: 3}
       propertyPath: originalScale.z
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -6949411213949222180, guid: a94ecf5d59fa8db4c90baecb70082f40,
+        type: 3}
+      propertyPath: scaleProportion
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: -6949411213949222180, guid: a94ecf5d59fa8db4c90baecb70082f40,
+        type: 3}
+      propertyPath: standardRotationSpeed
+      value: 10
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a94ecf5d59fa8db4c90baecb70082f40, type: 3}

@@ -19,8 +19,7 @@ public class UDPReceiver : MonoBehaviour
     // Game objects
     public Camera camera;
     private CameraBehavior cameraBehavior;
-    private GameObject kickSphere;
-    private FreqSphereBehaviour kickSphereBehaviour;
+    private FreqSphere kickSphere;
     private Fractal fractalRoot;
 
     // Incoming data
@@ -33,9 +32,8 @@ public class UDPReceiver : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        // Kick related - freqSpheres
-        kickSphere = GameObject.FindGameObjectWithTag("freqSphereVisualiser");
-        kickSphereBehaviour = kickSphere.GetComponent<FreqSphereBehaviour>();
+        // Kick related
+        kickSphere = GameObject.FindGameObjectWithTag("freqSphereVisualiser").GetComponent<FreqSphere>();
 
         // Snare related
         fractalRoot = GameObject.Find("Fractal").GetComponent<Fractal>();
@@ -63,22 +61,22 @@ public class UDPReceiver : MonoBehaviour
                 drumThumb = returnData[11] / 127.0f;
                 level = returnData[0] == 0.0f ? 0.0f : Mathf.Log10(returnData[0]);
                 AutoMapper.updateF0(level);
-                float colorVal = 20 * level / AutoMapper.F0;
+                float colorVal = level / AutoMapper.F0;
                 color = Color.HSVToRGB(colorVal, 1.0f, colorVal);
-                kickSphereBehaviour.ChangeColor(kickSphere, color);
-                kickSphereBehaviour.ChangeNoiseAmount(kickSphere, level / AutoMapper.F0);
-                if (drumThumb > 0.1f)
+                kickSphere.ChangeColor(color);
+                kickSphere.ChangeNoiseAmount(2 * colorVal);
+                if (drumThumb > 0.07f && drumThumb > drumMiddle)
                 {
                     // Trigger kick behaviour
                     color.a = 1f;
-                    kickSphereBehaviour.triggerImpact();
+                    kickSphere.triggerImpact();
 
                     // Trigger fractal movement
                     fractalRoot.triggerKick();
                 }
 
                 drumMiddle = returnData[13] / 127.0f;
-                if (drumMiddle > 0.1f)
+                if (drumMiddle > 0.07f)
                 {
                     psManager.triggerSnare();
                 }
@@ -88,20 +86,19 @@ public class UDPReceiver : MonoBehaviour
                 level = returnData[1] == 0.0f ? 0.0f : Mathf.Log10(returnData[1]);
                 //Update max value if higher (taken care of by AutoMapper)
                 AutoMapper.updateF2(level);
-                // Update fade level(alpha value)
-                fractalRoot.updateFade(level, AutoMapper.F2);
-                //fractalRoot.updateFade(1, 1);
+
                 // Trigger fractal scaling if snare hits
-                if (drumMiddle > 0.2f)
+                if (drumMiddle > 0.4f)
                 {
                     color = Color.HSVToRGB(drumMiddle, 1.0f, 1f);
                     fractalRoot.ChangeColor(color);
                     fractalRoot.triggerImpact();
                 }
+                fractalRoot.setF4(level);
 
                 // Ring finger
                 drumRing = returnData[14] / 127f;
-                if (drumRing > 0f)
+                if (drumRing > 0.1f)
                 {
                     fractalRoot.triggerHihat();
                 }

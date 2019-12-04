@@ -48,6 +48,7 @@ public class Fractal : ResponsiveGameObject
         Quaternion.Euler(90f, 0f, 0f),
         Quaternion.Euler(-90f, 0f, 0f)
     };
+    private float f4;
 
     new void Start()
     {
@@ -74,11 +75,19 @@ public class Fractal : ResponsiveGameObject
         if (isRoot)
         {
             scale(scaleProportion);
-            rotate();
+            //rotate();
             standardRotate();
             kickMove();
             hihatRotate();
             fadeOut();
+            Color col = Color.HSVToRGB(f4, 1.0f, f4);
+            if(f4 == 0f)
+            {
+                ChangeColor(col);
+            } else
+            {
+                ChangeColor(Color.Lerp(material.GetColor("_Colour"), col, Time.deltaTime * 2f));
+            }
         }
     }
 
@@ -112,8 +121,10 @@ public class Fractal : ResponsiveGameObject
     private void standardRotate()
     {
         // Rotate around y-axis
-        transform.localRotation = Quaternion.Euler(0,
-                    transform.localRotation.eulerAngles.y + standardRotationSpeed * Time.deltaTime, 0);
+        transform.localRotation = Quaternion.Euler(
+            transform.localRotation.eulerAngles.x,
+            transform.localRotation.eulerAngles.y + standardRotationSpeed * Time.deltaTime,
+            transform.localRotation.eulerAngles.z);
     }
 
     private void kickMove()
@@ -161,8 +172,10 @@ public class Fractal : ResponsiveGameObject
             {
                 // Rotaaate
                 float process = map(hihatTimer, 0f, hihatTimeDuration, 0f, 1f);
-                transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(0,
-                    currentRotation.eulerAngles.y - hihatRotationDegrees, 0), process);
+                transform.localRotation = Quaternion.Slerp(currentRotation, Quaternion.Euler(
+                    currentRotation.eulerAngles.x + hihatRotationDegrees,
+                    0,
+                    currentRotation.eulerAngles.z + hihatRotationDegrees), process);
             }
         }
     }
@@ -176,5 +189,10 @@ public class Fractal : ResponsiveGameObject
     {
         if (!hihatTimerStarted) hihatTimerStarted = true;
         currentRotation = transform.localRotation;
+    }
+
+    public void setF4(float f4)
+    {
+        this.f4 = f4;
     }
 }

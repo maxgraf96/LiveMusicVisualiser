@@ -86,8 +86,10 @@ public class ResponsiveGameObject : MonoBehaviour
             {
                 // Rotaaate
                 float process = map(rotTimer, 0f, rotTimeInSeconds, 0f, 1f);
-                transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(0,
-                    currentRotation.eulerAngles.y + rotDegrees, 0), process);
+                transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(
+                    transform.localRotation.eulerAngles.x,
+                    currentRotation.eulerAngles.y + rotDegrees,
+                    transform.localRotation.eulerAngles.z), process);
             }
         }
     }

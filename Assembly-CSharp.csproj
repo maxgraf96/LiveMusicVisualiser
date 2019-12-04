@@ -66,7 +66,7 @@
     <Compile Include="Assets\AutoMapper.cs" />
     <Compile Include="Assets\CameraBehavior.cs" />
     <Compile Include="Assets\Fractal.cs" />
-    <Compile Include="Assets\FreqSphereBehaviour.cs" />
+    <Compile Include="Assets\FreqSphere.cs" />
     <Compile Include="Assets\MyCloudBehaviour.cs" />
     <Compile Include="Assets\PSManager.cs" />
     <Compile Include="Assets\ResponsiveGameObject.cs" />

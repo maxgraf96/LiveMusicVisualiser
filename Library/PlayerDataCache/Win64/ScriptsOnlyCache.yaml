@@ -3,7 +3,7 @@ ScriptsOnlyBuild:
     Assembly-CSharp.dll:
     - CameraBehavior
     - Fractal
-    - FreqSphereBehaviour
+    - FreqSphere
     - MyCloudBehaviour
     - PSManager
     - SCS
@@ -139,10 +139,10 @@ ScriptsOnlyBuild:
     className: MotionBlur
   - hash:
       serializedVersion: 2
-      Hash: 95e1e334e036908b11882536844c454f
+      Hash: d49ea4659fc116ec89b4e0463923a97b
     assemblyName: Assembly-CSharp.dll
     namespaceName: 
-    className: FreqSphereBehaviour
+    className: FreqSphere
   - hash:
       serializedVersion: 2
       Hash: c3d3430df9e3ea95e3e3d587961390fb

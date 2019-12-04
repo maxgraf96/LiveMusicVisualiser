@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-/**
+﻿/**
  * This class continuously reads incoming values and keeps track of their maximums for auto mapping the ranges
  */
 public class AutoMapper

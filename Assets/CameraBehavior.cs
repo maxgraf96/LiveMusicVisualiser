@@ -70,7 +70,7 @@ public class CameraBehavior : MonoBehaviour
             z = Mathf.SmoothDamp(transform.position.z, Mathf.Sin(angle) * radius, ref rotationVelocity, smoothTime);
 
             // Height of camera (in terms of y-axis)
-            y = Mathf.SmoothDamp(transform.position.y, map(iRotation2, 0f, 1f, -5f, 5f), ref rotationVelocity, smoothTime);
+            y = Mathf.SmoothDamp(transform.position.y, map(iRotation2, 0f, 1f, -1f, 5f), ref rotationVelocity, smoothTime);
 
             transform.position = new Vector3(x, y, z);
             transform.LookAt(trackingSphere.transform);
@@ -89,7 +89,7 @@ public class CameraBehavior : MonoBehaviour
 
     public void SetZoom(float zoom)
     {
-        radius = map(zoom, 0f, 1f, 20f, 5f);
+        radius = map(zoom, 0f, 1f, 6f, 3f);
     }
 
     private static float map(float value, float fromLow, float fromHigh, float toLow, float toHigh)
