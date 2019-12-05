@@ -1,23 +1,33 @@
 ﻿using UnityEngine;
 
 /**
- * Manager class for all particle system related tasks
+ * Manager class for all particle system related tasks. This class is meant to manage particle systems as well as their
+ * force fields
  */
 public class PSManager : MonoBehaviour
 {
-    // Snare related
+    // Snare related particle system
     private ParticleSystem snarePS;
+    // Snare related particle force field
     private ParticleSystemForceField snarePSF;
+
+    // Fields for timing events
     private bool snareTimerStarted = false;
     private float snareTimer = 0f;
+    // The original gravity of the snare force field
     private ParticleSystem.MinMaxCurve originalGravity;
+    // The original attraction value of the snare force field
     private ParticleSystem.MinMaxCurve originalAttraction;
+    // How long the gravity should be reduced upon a snare hit
     public float snareTimeInSeconds;
 
     void Start()
     {
+        // Assign the snare particle system
         snarePS = GameObject.Find("Snare PS").GetComponent<ParticleSystem>();
+        // Assign the snare particle system force field
         snarePSF = GameObject.Find("Snare PSF").GetComponent<ParticleSystemForceField>();
+        // Store original values for resetting later
         originalGravity = snarePSF.gravity;
         originalAttraction = snarePSF.rotationAttraction;
     }
@@ -27,6 +37,9 @@ public class PSManager : MonoBehaviour
         snare();
     }
 
+    // Manages a snare hit. This sets the gravity of the force field to 0,
+    // resulting in a explosion-like effect pushing the particles outwards.
+    // The effect is increased by increasing the particles' velocities.
     public void triggerSnare()
     {
         if (!snareTimerStarted) snareTimerStarted = true;
@@ -36,6 +49,8 @@ public class PSManager : MonoBehaviour
         changeParticleVelocity(snarePS, 1.5f);
     }
 
+    // In this case this method is only responsible for resetting the particle system force field values
+    // After the specified effect time.
     void snare()
     {
         if (snareTimerStarted)
@@ -51,20 +66,20 @@ public class PSManager : MonoBehaviour
                 snarePSF.rotationAttraction = originalAttraction;
                 changeParticleVelocity(snarePS, 1f/1.5f);
             } 
-            //else
-            //{
-            //    snareForceField.gravity = map(snareTimer, 0f, snareTimeInSeconds, 0f, originalGravity.constant);
-            //}
         }
     }
 
     // Changes the velocities of all the particles in a given particle system by multiplying it by the given velocityRatio
     void changeParticleVelocity(ParticleSystem ps, float velocityRatio)
     {
+        // Get the total number of particles currently in the system
         int particleCount = ps.particleCount;
+        // Create a new particle system for the changed values
         ParticleSystem.Particle[] particles = new ParticleSystem.Particle[particleCount];
+        // Assign the newly generated particles
         ps.GetParticles(particles);
 
+        // Increase/decrease the velocities
         for (int i = 0; i < particles.Length; i++)
         {
             particles[i].velocity *= velocityRatio;

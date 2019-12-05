@@ -251,7 +251,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84df101da1a1e8a4ab5f8c255f0d2d1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  camera: {fileID: 963194227}
   psManager: {fileID: 333749426}
 --- !u!1 &705507993
 GameObject:
@@ -5559,7 +5558,7 @@ PrefabInstance:
         type: 3}
       propertyPath: Player
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 963194228}
     - target: {fileID: 114087225151513282, guid: 36ebb9a9e2bbff843b92cc95e0cdc972,
         type: 3}
       propertyPath: CloudsSpeed

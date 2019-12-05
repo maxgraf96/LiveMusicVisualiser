@@ -1,7 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
+/**
+ * NOTE: Currently not in use (for cruft fest 2), however left included in the project as the project will be extended in the future.
+ */
 public class MyCloudBehaviour : MonoBehaviour
 {
     private float smoothTime = 0.075f;

@@ -1,8 +1,20 @@
 ﻿using UnityEngine;
 
+/*
+ * Base class for custom game objects that can be affected by the incoming UDP data.
+ * This includes transformations like scaling and rotation as well as color/surface effects like fading the game objects.
+ * All of the effects are designed for impact-like actions, i.e. they are triggered at some point and then perform a certain
+ * action over a certain amount of time. This decision was made to translate the playing of drums (triggering sounds) to visual objects.
+ * The particular settings for the transformations are exposed as public fields, which enables them to be set directly from inside
+ * the Unity editor. This makes for an easy way of tweaking and customising the effects.
+ * 
+ * IMPORTANT NOTE: Not all of the methods declared here are currently in use as some have been written for trying out different
+ * styles and looks for the visual effects. However, as I plan to continue working on this project they have been kept in the 
+ * code so as to keep them for further development.
+ * */
 public class ResponsiveGameObject : MonoBehaviour
 {
-    // Mesha and Material
+    // Mesh and Material
     public Mesh mesh;
     public Material material;
 
@@ -29,6 +41,7 @@ public class ResponsiveGameObject : MonoBehaviour
 
     // Start is called before the first frame update
     internal void Start() {
+        // Set the current rotation once
         currentRotation = transform.localRotation;
     }
 
@@ -37,10 +50,12 @@ public class ResponsiveGameObject : MonoBehaviour
 
     }
 
-    internal void scale(float scale)
+    // Scale the game object by a certain value.
+    internal void scale()
     {
         if (scaleTimerStarted)
         {
+            // Update timer
             scaleTimer += Time.deltaTime;
 
             if (scaleTimer >= scaleTimeInSeconds)
@@ -69,10 +84,12 @@ public class ResponsiveGameObject : MonoBehaviour
         }
     }
 
+    // Rotate the object around the y axis
     internal void rotate()
     {
         if (rotTimerStarted)
         {
+            // Update timer
             rotTimer += Time.deltaTime;
 
             if (rotTimer >= rotTimeInSeconds)
@@ -84,8 +101,9 @@ public class ResponsiveGameObject : MonoBehaviour
             }
             else
             {
-                // Rotaaate
+                // Rotate
                 float process = map(rotTimer, 0f, rotTimeInSeconds, 0f, 1f);
+                // Lerp produces a linear interpolation between two values which generates a smoother transition
                 transform.localRotation = Quaternion.Lerp(currentRotation, Quaternion.Euler(
                     transform.localRotation.eulerAngles.x,
                     currentRotation.eulerAngles.y + rotDegrees,
@@ -94,10 +112,12 @@ public class ResponsiveGameObject : MonoBehaviour
         }
     }
 
+    // Fade the game object out by decreasing the alpha values
     internal void fadeOut()
     {
         if (fadeTimerStarted)
         {
+            // Update timer
             fadeTimer += Time.deltaTime;
 
             if (fadeTimer >= fadeTimeInSeconds)
@@ -107,12 +127,13 @@ public class ResponsiveGameObject : MonoBehaviour
                 fadeTimerStarted = false;
             }
         }
-        // Fadeeee
+        // Fade
         Color current = material.GetColor("_Colour");
         current.a = currentFadeValue;
         ChangeColor(current);
     }
 
+    // Change the color and alpha value of the game object
     public void ChangeColor(Color color)
     {
         // This also sets the colour of all child elements
@@ -120,22 +141,25 @@ public class ResponsiveGameObject : MonoBehaviour
         material.SetFloat("_AlphaValue", color.a);
     }
 
+    // Triggers both a scaling and rotation
     public void triggerImpact()
     {
         triggerScale();
         triggerRotation();
     }
-    // Triggers
+    // Triggers the fade out effect
     public void triggerFadeOut()
     {
         if (!fadeTimerStarted) fadeTimerStarted = true;
     }
 
+    // Trigger the scaling effect
     public void triggerScale()
     {
         if (!scaleTimerStarted) scaleTimerStarted = true;
     }
 
+    // Trigger the rotation effect
     public void triggerRotation()
     {
         if (!rotTimerStarted) rotTimerStarted = true;

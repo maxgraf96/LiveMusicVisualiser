@@ -1,28 +1,39 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/**
+ * Child of ResponsiveGameObject.
+ * This class represents a semi-abstract way of an interactive 3D fractal. It can take any mesh and material and is hence
+ * not limited to particular look. For cruft fest 2 a cube with displaced normals was chosen as the shape (defined in Unity).
+ * The class is inherently recursive, meaning both the root and the fractal and its children are instances of the same class.
+ * This makes transforming the whole fractal very cheap in terms of computational complexity, as only the root has to be transformed.
+ * 
+ * Some of the techniques (especially the generation of children) are adapted from: 
+ * https://catlikecoding.com/unity/tutorials/constructing-a-fractal/
+ */
 public class Fractal : ResponsiveGameObject
 {
+    // The depth in the tree of children
     public int depth;
+    // The maximum number of children allowed
     public int maxDepth;
+    // What scale the children should be compared to their parents
     public float childScale;
-    private float depthRatio;
-    private float iVisibilty; // Incoming visibilty [0...1]
+    // The fractal's children
     private Fractal[] children;
+    // Initial color
     private Color initial = new Color(0, 0, 0, 0.5f);
     // Determines how quickly the fractal rotates without interaction
     public float standardRotationSpeed;
 
-    // Kick related
+    // Kick event related fields
     private bool kickTimerStarted = false;
     private float kickTimer;
     public float kickTimeDuration;
     // How far the kick impact should move the fractal
     public float kickScale;
-    private Vector3 originalPosition = Vector3.zero;
 
-    // HiHat related
+    // HiHat event related fields
     private bool hihatTimerStarted = false;
     private float hihatTimer;
     public float hihatTimeDuration;
@@ -33,12 +44,13 @@ public class Fractal : ResponsiveGameObject
     public bool isRoot = false;
 
     // Where the child objects should be spawned
+    // In this case they are generated in all directions except downwards
     private static Vector3[] childDirections = {
         Vector3.up,
         Vector3.right,
         Vector3.left,
         Vector3.forward,
-        Vector3.back
+        Vector3.back,
     };
 
     private static Quaternion[] childOrientations = {
@@ -46,8 +58,10 @@ public class Fractal : ResponsiveGameObject
         Quaternion.Euler(0f, 0f, -90f),
         Quaternion.Euler(0f, 0f, 90f),
         Quaternion.Euler(90f, 0f, 0f),
-        Quaternion.Euler(-90f, 0f, 0f)
+        Quaternion.Euler(-90f, 0f, 0f),
     };
+
+    // Intensity of the fourth frequency band
     private float f4;
 
     new void Start()
@@ -59,13 +73,14 @@ public class Fractal : ResponsiveGameObject
         gameObject.AddComponent<MeshFilter>().mesh = mesh;
         gameObject.AddComponent<MeshRenderer>().material = material;
 
-        // Create next layer of child objects
+        // Create next layer of child objects if still allowed
         if (depth < maxDepth)
         {
+            // By using StartCoroutine the children are generated in game
+            // Additionally it allows for easy spawning of children in a loop
             StartCoroutine(CreateChildren());
         }
 
-        depthRatio = depth / maxDepth;
     }
 
     new void Update()
@@ -74,12 +89,13 @@ public class Fractal : ResponsiveGameObject
         // Transforms need to be done only on the root object as they will cascade to child objects
         if (isRoot)
         {
-            scale(scaleProportion);
+            scale();
             //rotate();
             standardRotate();
             kickMove();
             hihatRotate();
             fadeOut();
+            // Make color responsive to intensity in the fourth frequency band
             Color col = Color.HSVToRGB(f4, 1.0f, f4);
             if(f4 == 0f)
             {
@@ -91,9 +107,10 @@ public class Fractal : ResponsiveGameObject
         }
     }
 
-    // Fractal specific methods
+    // Initialiser for each fractal
     private void Initialize(Fractal parent, int childIndex)
     {
+        // Get base values from parent
         mesh = parent.mesh;
         material = parent.material;
         material.SetColor("_Colour", initial);
@@ -102,11 +119,14 @@ public class Fractal : ResponsiveGameObject
         childScale = parent.childScale;
         transform.parent = parent.transform;
         transform.localScale = Vector3.one * childScale; // This makes children childScale (half) the size of their parents
+        // Move to position relative to parent
         transform.localPosition =
             childDirections[childIndex] * (0.5f + 0.5f * childScale);
+        // Rotate relative to parent
         transform.localRotation = childOrientations[childIndex];
     }
 
+    // Create children
     private IEnumerator CreateChildren()
     {
         for (int i = 0; i < childDirections.Length; i++)
@@ -115,9 +135,11 @@ public class Fractal : ResponsiveGameObject
             new GameObject("Fractal Child").AddComponent<Fractal>().
                 Initialize(this, i);
         }
+        // After the loop is done the children can be easily accessed
         children = GetComponentsInChildren<Fractal>();
     }
 
+    // Standard rotation around the y-axis (without interaction)
     private void standardRotate()
     {
         // Rotate around y-axis
@@ -127,10 +149,14 @@ public class Fractal : ResponsiveGameObject
             transform.localRotation.eulerAngles.z);
     }
 
+    // Influence of kick drum on the fractal. This method currently scales the fractal down to make space for the
+    // extended kick sphere.
     private void kickMove()
     {
+        // Only execute if not currently executing
         if (kickTimerStarted)
         {
+            // Update timer
             kickTimer += Time.deltaTime;
 
             if (kickTimer >= kickTimeDuration)
@@ -156,10 +182,13 @@ public class Fractal : ResponsiveGameObject
         }
     }
 
+    // Influence of hihat on the fractal. This method currently rotates the fractal around the xz-axes upon impact.
     private void hihatRotate()
     {
+        // Only execute if not currently executing
         if (hihatTimerStarted)
         {
+            // Update timer
             hihatTimer += Time.deltaTime;
 
             if (hihatTimer >= hihatTimeDuration)
@@ -170,7 +199,7 @@ public class Fractal : ResponsiveGameObject
             }
             else
             {
-                // Rotaaate
+                // Rotate
                 float process = map(hihatTimer, 0f, hihatTimeDuration, 0f, 1f);
                 transform.localRotation = Quaternion.Slerp(currentRotation, Quaternion.Euler(
                     currentRotation.eulerAngles.x + hihatRotationDegrees,
@@ -180,17 +209,20 @@ public class Fractal : ResponsiveGameObject
         }
     }
 
+    // Trigger method for the kick drum
     public void triggerKick()
     {
         if (!kickTimerStarted) kickTimerStarted = true;
     }
 
+    // Trigger method for the hihat
     public void triggerHihat()
     {
         if (!hihatTimerStarted) hihatTimerStarted = true;
         currentRotation = transform.localRotation;
     }
 
+    // Method to set the intensity of the frequency in the fourth band.
     public void setF4(float f4)
     {
         this.f4 = f4;

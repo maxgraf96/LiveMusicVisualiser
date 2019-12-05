@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class SCS : MonoBehaviour {
 
@@ -14,6 +12,6 @@ public class SCS : MonoBehaviour {
 
 		gameObject.transform.position = Player.transform.position;
 
-		transform.Rotate(0,Time.deltaTime*CloudsSpeed ,0); 
+		transform.Rotate(0, Time.deltaTime*CloudsSpeed, 0); 
 	}
 }
